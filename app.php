@@ -47,7 +47,8 @@
 var App = (function($, mz) {
 	var vars = {
 		"mode":"user",
-		"id":"12345"
+		"id":"12345",
+		"title":" | Ticktox"
 	}
 	
 	
@@ -129,6 +130,7 @@ var App = (function($, mz) {
 					// Turn off clicked task
 					local.logLastTask();
 					clickParent.removeClass("on").addClass("off"); 
+					$("title").html("NOT RUNNING"+title);
 				} else {
 					// Turn on clicked task, turn off others
 					local.logLastTask();
@@ -136,6 +138,7 @@ var App = (function($, mz) {
 					$(".block.active").removeClass("on").addClass("off");
 					clickParent.removeClass("off").addClass("on");
 					local.playAudio();
+					$("title").html(taskName+vars.title);
 				}
 			}			
 		},
