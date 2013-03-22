@@ -1,41 +1,36 @@
 <?
-	if ($_POST["log"]) {
+	if (isset($_POST["log"])) {
 		$id = $_POST["log"];
-		$file = "./data/".$id.".db";
+		$file = "./data/".$id.".log";
 		
-		$a_db = unserialize(file_get_contents($file));
+		if (file_exists($file)) {
+			$s_log = file_get_contents($file);
+		} else {
+			$s_log = "";
+		}
 		
-		$a_db["log"][] = array("task"=>$_POST["task"], "state"=>$_POST["state"], "date"=>time());
+		$s_log .= implode(";",array($_POST["task"],$_POST["state"],date("Y-m-d"),date("G:i"),time()))."\n";
 		
-		$s_db = serialize($a_db);
 			
 			$fr = fopen($file,"w");
-			fwrite($fr, $s_db);
+			fwrite($fr, $s_log);
 			fclose($fr);		
 	}
 	
-	if ($_POST["report"]) {
+	if (isset($_POST["report"])) {
 		$id = $_POST["report"];
-		$file = "./data/".$id.".db";
+		$file = "./data/".$id.".log";
 		
-		$a_db = unserialize(file_get_contents($file));
+		$a_rawlog = file($file);
 		$a_log = array();
-		foreach ($a_db["log"] as $a_entry) {
-			$a_log[$a_entry["task"]][] = $a_entry["date"];
+		foreach ($a_rawlog as $line) {
+			$a_log[] = explode(";", $line);
 		}
 		
-		foreach ($a_log as $task => $a_all) {
-			echo $task."<br>";
-			$a_sets = array_chunk($a_all, 2);
-			foreach ($a_sets as $a_pair) {
-				echo ($a_pair[1] - $a_pair[0])."<br>";
-			}
-		}
-		
-		//print_r($a_log);
+		print_r($a_log);
 	}
 
-	if ($_POST["init"]) {
+	if (isset($_POST["init"])) {
 		$id = $_POST["init"];
 		$file = "./data/".$id.".db";
 		
@@ -68,7 +63,7 @@
 	}
 	
 	
-	if ($_POST["save"]) {
+	if (isset($_POST["save"])) {
 		$id     = $_POST["save"];
 		$file   = "data/".$id.".db";
 		

@@ -3,15 +3,25 @@
 <head>
 	<title>Ticktox</title>
 	<style>
-		body { background-color:#333; }
+		body { background-color:#000; padding:0; margin:0; font-family:arial,helvetica,sans-serif; }
+		button { font-family:verdana,tahoma,arial,helvetica,sans-serif; }
+		#stage { border-top:solid 1px #333; border-left:solid 1px #333;overflow:auto;width:100%; }
 		#stage .block { width:20%; float:left; }
-		#stage .block .action { width:100%; height:80px; color:#ccc; }
+		#stage .block .action { cursor:pointer; font-size:14px; width:100%; height:80px; color:#ccc; border-left:none; border-top:none; border-right:solid 1px #333;border-bottom:solid 1px #333;}
 		#stage .block .clear { display:none; }
-		#stage.user .block.empty .action { background-color:#333; }
-		#stage.user .block.active.on .action { background-color:#0f0; color:#333; }
-		#stage.user .block.active.off .action { background-color:#f00; color:#333; }
-		#stage.admin .block .action { background-color:#ccc; color:#333; }
-		#stage.admin .block.active .action span:before { content:"X"; padding-right:3px; }
+		#stage.user .block.empty .action { background-color:#1a1a1a; color:#666; }
+		#stage.user .block.active.on .action { background-color:#5DA700; color:#fff; }
+		#stage.user .block.active.off .action { background-color:#810000; color:#ccc; }
+		
+		#stage.admin .block button { background:none; }
+		#stage.admin .block.empty { background-color:#1a1a1a; color:#333; }
+		#stage.admin .block.empty button { background-color:#1a1a1a; color:#333; }
+		
+		#stage.admin .block.active .action { background-color:#999; color:#000; }
+		x#stage.admin .block.active .action span:before { content:"X"; padding-right:3px; }
+
+	#controls { text-align:right; color:#333;}
+		#controls button { cursor:pointer; background:none; border:none; color:#333; font-size:13px; }
 
 		#log { color:#0f0; clear:both; }
 	</style>
@@ -19,13 +29,12 @@
 </head>
 <body>
 <div id="controls">
-	<button id="editall">Edit Tasks</button>
-	<button id="report">Report</button>
+	<strong>Ticktox</strong> | <button id="editall">Remove Tasks</button>
+	<button id="report">Log Report</button>
 </div>
 <div id="stage" class="user"></div>
-<pre id="log">
-
-</pre>
+<pre id="log"></pre>
+<audio preload autoplay></audio>
 
 
 <script id="tmpl-block" type="text/x-jquery-tmpl">
@@ -47,7 +56,6 @@ var App = (function($, mz) {
 		"init":function(callback) {
 			var self = this;
 			$.post("db.php",{"init":vars.id}, function(response) {
-				console.log(response);
 				self.data = JSON.parse(response);
 				callback();
 			});
@@ -78,6 +86,7 @@ var App = (function($, mz) {
 			db.init(function() {
 				local.renderBlocks(25);
 				bind.init();
+				local.startTimer(600); // In seconds
 			});
 		},
 
@@ -126,6 +135,7 @@ var App = (function($, mz) {
 					local.logTask(taskName);
 					$(".block.active").removeClass("on").addClass("off");
 					clickParent.removeClass("off").addClass("on");
+					local.playAudio();
 				}
 			}			
 		},
@@ -174,6 +184,21 @@ var App = (function($, mz) {
 			$.post("db.php",{"report":vars.id},function(response) {
 				$("#log").html(response);
 			});
+		},
+
+		"playAudio":function() {
+			console.log("beep");
+			$("audio").attr("src","beep.mp3");
+		},
+
+		"startTimer":function(sec) {
+			console.log("timer start");
+			local.timer = window.setInterval(local.playAudio,(sec * 1000));
+		},
+
+		"stopTimer":function() {	
+			console.log("timer stop");
+			window.clearInterval(local.timer);
 		}
 	}
 	
