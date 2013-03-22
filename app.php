@@ -24,6 +24,8 @@
 		#controls button { cursor:pointer; background:none; border:none; color:#333; font-size:13px; }
 
 		#log { color:#0f0; clear:both; }
+		#chart { overflow:auto;width:100%; }
+		#chart .bar { font-size:11px;color:#ccc;float:left;height:60px; border-right:solid 1px #000; overflow:hidden; }
 	</style>
 	<script type="text/javascript" src="./stack.js"></script>
 </head>
@@ -33,7 +35,7 @@
 	<button id="report">Log Report</button>
 </div>
 <div id="stage" class="user"></div>
-<pre id="log"></pre>
+<div id="log"></div>
 <audio preload autoplay></audio>
 
 
@@ -131,6 +133,7 @@ var App = (function($, mz) {
 					local.logLastTask();
 					clickParent.removeClass("on").addClass("off"); 
 					$("title").html("NOT RUNNING"+title);
+					local.stopTimer();
 				} else {
 					// Turn on clicked task, turn off others
 					local.logLastTask();
@@ -138,6 +141,8 @@ var App = (function($, mz) {
 					$(".block.active").removeClass("on").addClass("off");
 					clickParent.removeClass("off").addClass("on");
 					local.playAudio();
+					local.stopTimer();
+					local.startTimer();
 					$("title").html(taskName+vars.title);
 				}
 			}			
@@ -190,17 +195,14 @@ var App = (function($, mz) {
 		},
 
 		"playAudio":function() {
-			console.log("beep");
 			$("audio").attr("src","beep.mp3");
 		},
 
 		"startTimer":function(sec) {
-			console.log("timer start");
 			local.timer = window.setInterval(local.playAudio,(sec * 1000));
 		},
 
 		"stopTimer":function() {	
-			console.log("timer stop");
 			window.clearInterval(local.timer);
 		}
 	}

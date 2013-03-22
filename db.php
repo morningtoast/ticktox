@@ -31,6 +31,7 @@
 		$prevTime = 0;
 		$i_size   = count($a_log);
 		$a_totals = array();
+		$i_totalTime = 0;
 		for ($a=0; $a < $i_size; $a) {
 			$a_entry  = $a_log[$a];
 			$thisTask = $a_entry[0];
@@ -53,6 +54,7 @@
 				}
 
 				$a_totals[$thisTask] += $diff;
+				$i_totalTime += $diff;
 			} else {
 				$a++;
 			}
@@ -65,11 +67,29 @@
 			$a_totals[$a_last[0]] += $diff;
 		}
 
-
+		$s_chart = '<div id="chart">';
+		   $rand = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
+    
+    
 		foreach ($a_totals as $task => $s) {
-			$a_report[] = $task." for ".number_format(($s/60)/60,2)." hrs";
+			$hrs = number_format(($s/60)/60,2);
+			$per = round(($s / $i_totalTime)*100);
+			$color = '#'.$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)];
+			$color = "#666";
+
+			if ($per > 10) { $color = "#060"; }
+			if ($per > 25) { $color = "#009"; }
+			if ($per > 50) { $color = "#ff0"; }
+			if ($per > 75) { $color = "#f00"; }
+
+			$s_chart .= '<div class="bar" style="background-color:'.$color.';width:'.$per.'%">'.$task.'</div>';
+
+			$a_report[] = $task." for ".$hrs." hrs";
 		}
+		$s_chart .= "</div>";
 		
+		//
+		echo $s_chart;
 		print_r($a_report);
 	}
 
