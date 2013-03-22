@@ -26,8 +26,51 @@
 		foreach ($a_rawlog as $line) {
 			$a_log[] = explode(";", $line);
 		}
+
+		$lastTask = md5(time());
+		$prevTime = 0;
+		$i_size   = count($a_log);
+		$a_totals = array();
+		for ($a=0; $a < $i_size; $a) {
+			$a_entry  = $a_log[$a];
+			$thisTask = $a_entry[0];
+			$thisTime = $a_entry[4];
+
+			$i_nextPos = ($a+1);
+
+			if ($i_nextPos < $i_size) {
+				$nextEntry = $a_log[$i_nextPos];
+				$nextTask  = $nextEntry[0];
+				$nextTime  = $nextEntry[4];
+
+				$diff = ($nextTime - $thisTime);
+
+				if ($thisTask == $nextTask) {
+
+					$a += 2;
+				} else {
+					$a++;
+				}
+
+				$a_totals[$thisTask] += $diff;
+			} else {
+				$a++;
+			}
+		}
+
+		// Check last entry to see if it was not closed, if not, use current time for duration
+		$a_last = end($a_log);
+		if ($a_last[1] != "off") {
+			$diff = (time() - $a_last[4]);
+			$a_totals[$a_last[0]] += $diff;
+		}
+
+
+		foreach ($a_totals as $task => $s) {
+			$a_report[] = $task." for ".number_format(($s/60)/60,2)." hrs";
+		}
 		
-		print_r($a_log);
+		print_r($a_report);
 	}
 
 	if (isset($_POST["init"])) {
