@@ -20,6 +20,7 @@
 <body>
 <div id="controls">
 	<button id="editall">Edit Tasks</button>
+	<button id="report">Report</button>
 </div>
 <div id="stage" class="user"></div>
 <pre id="log">
@@ -36,50 +37,59 @@
 <script>
 var App = (function($, mz) {
 	var vars = {
-		"mode":"user"
+		"mode":"user",
+		"id":"12345"
 	}
+	
+	
+	var db = {
+		"data":[],
+		"init":function(callback) {
+			var self = this;
+			$.post("db.php",{"init":vars.id}, function(response) {
+				console.log(response);
+				self.data = JSON.parse(response);
+				callback();
+			});
+		},
+		"save":function() {
+
+			var store = []; // Clears current DB
+
+			$("#stage .block").each(function(k,v) {
+				var item = $(this);
+				var dataSet = {
+					"id":item.data("id"),
+					"name":item.find("button").data("name")
+				}
+				store.push(dataSet);
+			});
+			
+			$.post("db.php",{"save":vars.id,"data":store}, function(response) {
+				console.log(response);
+			});			
+		}
+	
+	}	
 
 	// Private
 	var local = {
 		"init":function() {
-			if (mz.localstorage) {
-				local.iniLocalStorage();
-			}
-
-//localStorage.removeItem("index");
-console.log(localStorage.getItem("index"));
-			local.renderBlocks(25); bind.init();
+			db.init(function() {
+				local.renderBlocks(25);
+				bind.init();
+			});
 		},
 
 		"renderBlocks":function(limit) {
-			var tmpl = $("#tmpl-block").html();
-			var db   = localStorage.getItem("index");
-
-			// New load
-			if (db == null) {
-				db = [];
-				for (a=1; a <= limit; a+=1) {
-					db.push({"id":a,"name":"empty","defaultClass":"empty","state":"empty"});
-				}
-
-				db = JSON.stringify(db);
-			}
-
-			db = JSON.parse(db);
-	
-			$.each(db, function(k,viewData) {
+			var tmpl = $("#tmpl-block").html();		
+			$.each(db.data.index, function(k,viewData) {
 				if (viewData.name != "empty") { viewData.defaultClass = "active off"; } else { viewData.defaultClass="empty"; }
 
 				var render = Mustache.render(tmpl, viewData);
 
 				$("#stage").append(render);
 			});
-
-			local.saveDb();
-		},
-
-		"iniLocalStorage":function() {
-			localStorage.setItem("db","[]");
 		},
 
 		"handleBlockAction":function() {
@@ -103,7 +113,7 @@ console.log(localStorage.getItem("index"));
 					clicked.find("span").html(taskName);
 					clickParent.removeClass("empty").addClass("off").addClass("active");
 
-					local.saveDb();
+					db.save();
 				}
 			} else {
 				if (clickParent.hasClass("on")) {
@@ -124,40 +134,18 @@ console.log(localStorage.getItem("index"));
 			var taskName = $("#stage .on .action").data("name");
 
 			if (taskName != undefined) {
-				$("#log").append("OFF: "+taskName+"\n");
+				$.post("db.php",{"log":vars.id,"task":taskName,"state":"off"},function(response) {
+					$("#log").append("OFF: "+taskName+"\n");
+				});
+				
 			}
 		},
 
 		"logTask":function(taskName) {
-			$("#log").append("ON: "+taskName+"\n");
-		},
-
-		"saveDb":function() {
-
-			var store = []; // Clears current DB
-
-			$("#stage .block").each(function(k,v) {
-				var item = $(this);
-				var dataSet = {
-					"id":item.data("id"),
-					"name":item.find("button").data("name"),
-					"state":item.data("state")
-				}
-				store.push(dataSet);
+			$.post("db.php",{"log":vars.id,"task":taskName,"state":"on"},function(response) {
+				$("#log").append("ON: "+taskName+"\n");
 			});
-
-
-
-
-			//localStorage.db = JSON.stringify(store);
-			localStorage.removeItem("index");
-			localStorage.setItem("index",JSON.stringify(store));
-
-			console.log("saving...");
-			console.log(localStorage.getItem("index"));
-
-//console.log("just saved ="+localStorage.getItem("db"));
-
+			//$("#log").append("ON: "+taskName+"\n");
 		},
 
 		"adminSwitch":function() {
@@ -179,17 +167,30 @@ console.log(localStorage.getItem("index"));
 			clicked.find("span").html("empty");
 			clickParent.addClass("empty").removeClass("active");
 
-			local.saveDb();
+			db.save();
+		},
+		
+		"showReport":function() {
+			$.post("db.php",{"report":vars.id},function(response) {
+				$("#log").html(response);
+			});
 		}
 	}
+	
+
 
 	// Binds
 	var bind = {
 		"init":function() {
 			bind.userActions();
 			bind.adminSwitch();
+			bind.report();
 		},
-
+	
+		"report":function() {
+			$("#report").on("click", local.showReport);
+		},
+		
 		"userActions":function() {
 			$("#stage").on("click", ".block .action", local.handleBlockAction);
 		},
