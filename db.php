@@ -1,4 +1,27 @@
 <?
+	require_once("class_app.php");
+	$App = new App($_REQUEST["id"]);
+	
+	if (isset($_POST["init"])) {
+		$a_index = $App->getIndex();
+		echo json_encode($a_index);
+	}
+	
+	if (isset($_POST["save"])) {
+		$App->saveIndex($_POST["data"]);
+	}
+	
+	if (isset($_POST["log"])) {
+		$a_entry = $App->logEntry($_POST["entry"]);
+		echo json_encode($a_entry);
+	}	
+	
+	if (isset($_POST["report"])) {
+		$a_report = $App->getReport();
+		echo json_encode($a_report);
+	}
+	
+/*	
 	if (isset($_POST["log"])) {
 		$id = $_POST["log"];
 		$file = "./data/".$id.".log";
@@ -73,7 +96,7 @@
     
 		foreach ($a_totals as $task => $s) {
 			$hrs = number_format(($s/60)/60,2);
-			$per = round(($s / $i_totalTime)*100);
+			$per = floor(($s / $i_totalTime)*100);
 			$color = '#'.$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)].$rand[rand(0,15)];
 			$color = "#666";
 
@@ -120,8 +143,9 @@
 			
 		} else {
 		
-			$s_db = json_encode(unserialize(file_get_contents($file)));
-			echo $s_db;
+			$a_db = unserialize(file_get_contents($file));
+			print_r($a_db);
+			echo stripslashes(json_encode($a_db));
 		}
 	}
 	
@@ -139,4 +163,5 @@
 		fwrite($fr, serialize($a_existing));
 		fclose($fr);
 	}
+*/	
 ?>

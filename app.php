@@ -3,7 +3,7 @@
 <head>
 	<title>Ticktox</title>
 	<style>
-		body { background-color:#000; padding:0; margin:0; font-family:arial,helvetica,sans-serif; }
+		body { background-color:#000; padding:0; margin:0; font-family:arial,helvetica,sans-serif; color:#ccc; }
 		button { font-family:verdana,tahoma,arial,helvetica,sans-serif; }
 		#stage { border-top:solid 1px #333; border-left:solid 1px #333;overflow:auto;width:100%; }
 		#stage .block { width:20%; float:left; }
@@ -24,17 +24,41 @@
 		#controls button { cursor:pointer; background:none; border:none; color:#333; font-size:13px; }
 
 		#log { color:#0f0; clear:both; }
-		#chart { overflow:auto;width:100%; }
-		#chart .bar { font-size:11px;color:#ccc;float:left;height:60px; border-right:solid 1px #000; overflow:hidden; }
+		#chart { margin:10px 0; overflow:hidden;width:100%; }
+		#chart .bar { position:relative;font-size:11px;color:#ccc;float:left;height:60px; border-right:solid 1px #000; overflow:hidden; }
+		#chart .bar span { position:absolute; bottom:2px; left:4px; width:500px; }
+		#chart .bar.p1 { background-color:#3366FF; }
+		#chart .bar.p10 { background-color:#5C66F5; }
+		#chart .bar.p25 { background-color:#8566EB; }
+		#chart .bar.p50 { background-color:#AD66E0; }
+		#chart .bar.p75 { background-color:#D666D6; }
+		#chart .bar.p90 { background-color:#FF66CC; }
+		
+		#stats { width:100%; overflow:auto; }
+		#stats .column { float:left; width:33%; }
 	</style>
 	<script type="text/javascript" src="./stack.js"></script>
 </head>
-<body>
+<body data-id="12345">
 <div id="controls">
 	<strong>Ticktox</strong> | <button id="editall">Remove Tasks</button>
 	<button id="report">Log Report</button>
 </div>
 <div id="stage" class="user"></div>
+<div id="chart"></div>
+<div id="stats">
+	<div class="column">
+		log
+		<div id="log"></div>
+	</div>
+	<div class="column">
+		summary
+		<ul id="summary"></ul>
+	</div>
+	<div class="column">
+		dfdfdf
+	</div>
+</div>
 <div id="log"></div>
 <audio preload autoplay></audio>
 
@@ -44,31 +68,39 @@
 		<button class="action" data-name="{{name}}"><span>{{name}}</span></button>
 	</div>
 </script>
+<script id="tmpl-log" type="text/x-jquery-tmpl">
+	<pre class="row">[{{hours}}] {{task}}: {{state}}</pre>
+</script>
+<script id="tmpl-barchart" type="text/x-jquery-tmpl">
+	{{#data}}<div class="bar" data-percent="{{percent}}" style="width:{{percent}}%;background-color:{{barcolor}}"><span>{{task}}</span></div>{{/data}}
+</script>
+<script id="tmpl-summary" type="text/x-jquery-tmpl">
+	{{#data}}<li><span>{{task}}: {{hours}}hrs</span></li>{{/data}}
+</script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script>
 var App = (function($, mz) {
 	var vars = {
 		"mode":"user",
-		"id":"12345",
+		"id":$("body").data("id"),
 		"title":" | Ticktox"
 	}
 	
 	
 	var db = {
-		"data":[],
+		"index":[],
 		"init":function(callback) {
 			var self = this;
-			$.post("db.php",{"init":vars.id}, function(response) {
-				self.data = JSON.parse(response);
+			$.post("./db.php",{"init":"1","id":vars.id}, function(response) {
+				self.index = JSON.parse(response);
 				callback();
 			});
 		},
 		"save":function() {
-
 			var store = []; // Clears current DB
 
 			$("#stage .block").each(function(k,v) {
-				var item = $(this);
+				var item    = $(this);
 				var dataSet = {
 					"id":item.data("id"),
 					"name":item.find("button").data("name")
@@ -76,9 +108,7 @@ var App = (function($, mz) {
 				store.push(dataSet);
 			});
 			
-			$.post("db.php",{"save":vars.id,"data":store}, function(response) {
-				console.log(response);
-			});			
+			$.post("db.php",{"save":"1","id":vars.id,"data":store});			
 		}
 	
 	}	
@@ -89,13 +119,13 @@ var App = (function($, mz) {
 			db.init(function() {
 				local.renderBlocks(25);
 				bind.init();
-				local.startTimer(600); // In seconds
+				//local.startTimer(600); // In seconds
 			});
 		},
 
 		"renderBlocks":function(limit) {
 			var tmpl = $("#tmpl-block").html();		
-			$.each(db.data.index, function(k,viewData) {
+			$.each(db.index, function(k,viewData) {
 				if (viewData.name != "empty") { viewData.defaultClass = "active off"; } else { viewData.defaultClass="empty"; }
 
 				var render = Mustache.render(tmpl, viewData);
@@ -152,20 +182,26 @@ var App = (function($, mz) {
 			var taskName = $("#stage .on .action").data("name");
 
 			if (taskName != undefined) {
-				$.post("db.php",{"log":vars.id,"task":taskName,"state":"off"},function(response) {
-					$("#log").append("OFF: "+taskName+"\n");
+				
+				$.post("db.php",{"log":"1","id":vars.id,"entry":{"task":taskName,"state":"off"}},function(response) {
+					local.displayLog(JSON.parse(response));
 				});
 				
 			}
 		},
 
 		"logTask":function(taskName) {
-			$.post("db.php",{"log":vars.id,"task":taskName,"state":"on"},function(response) {
-				$("#log").append("ON: "+taskName+"\n");
+			$.post("db.php",{"log":"1","id":vars.id,"entry":{"task":taskName,"state":"on"}},function(response) {
+				local.displayLog(JSON.parse(response));
 			});
-			//$("#log").append("ON: "+taskName+"\n");
 		},
 
+		"displayLog":function(data) {
+			var tmpl = $("#tmpl-log").html();
+			var render = Mustache.render(tmpl, data);
+			$("#log").append(render);
+		},
+		
 		"adminSwitch":function() {
 			//$("#stage").removeClass("user").addClass("admin");
 			if (vars.mode == "admin") {
@@ -189,21 +225,42 @@ var App = (function($, mz) {
 		},
 		
 		"showReport":function() {
-			$.post("db.php",{"report":vars.id},function(response) {
-				$("#log").html(response);
+			$.post("db.php",{"report":vars.id,"id":vars.id},function(response) {
+				var data  = JSON.parse(response);
+				var chart = {"data":data};
+				
+				var tmpl   = $("#tmpl-barchart").html();
+				var render = Mustache.render(tmpl, chart);
+				$("#chart").html(render);	
+
+				$("#chart .bar").each(function() {
+					var p = $(this).data("percent");
+					var c = "p1";
+					if (p > 10) { c = "p10"; }
+					if (p > 25) { c = "p25"; }
+					if (p > 50) { c = "p50"; }
+					if (p > 75) { c = "p75"; }
+					if (p > 90) { c = "p90"; }
+					
+					$(this).addClass(c);
+				});
+				
+				var tmpl   = $("#tmpl-summary").html();
+				var render = Mustache.render(tmpl, chart);
+				$("#summary").html(render);
 			});
 		},
 
 		"playAudio":function() {
-			$("audio").attr("src","beep.mp3");
+			//$("audio").attr("src","beep.mp3");
 		},
 
 		"startTimer":function(sec) {
-			local.timer = window.setInterval(local.playAudio,(sec * 1000));
+			//local.timer = window.setInterval(local.playAudio,(sec * 1000));
 		},
 
 		"stopTimer":function() {	
-			window.clearInterval(local.timer);
+			//window.clearInterval(local.timer);
 		}
 	}
 	
