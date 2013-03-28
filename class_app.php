@@ -113,9 +113,11 @@
 			foreach ($a_totals as $task => $time) {
 				$hours   = number_format(($time/60)/60,2);
 				$percent = floor(($time / $i_totalTime)*100);
-				$i_totalPercent += $percent;
+				
 
-				if ($percent > 1) {
+				if ($percent > 0) {
+					$i_totalPercent += $percent;
+					
 					$a_report[] = array(
 						"task"    => $task,
 						"time"    => $time,

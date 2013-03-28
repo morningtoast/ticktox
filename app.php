@@ -4,8 +4,8 @@
 	<title>Ticktox</title>
 	<style>
 		body { background-color:#000; padding:0; margin:0; font-family:arial,helvetica,sans-serif; color:#ccc; }
-		button { font-family:verdana,tahoma,arial,helvetica,sans-serif; }
-		#stage { border-top:solid 1px #333; border-left:solid 1px #333;overflow:auto;width:100%; }
+		button { font-family:roboto,verdana,tahoma,arial,helvetica,sans-serif; text-transform:uppercase;font-style:italic;}
+		#stage { border-top:solid 1px #333; border-left:solid 1px #333;overflow:auto; }
 		#stage .block { width:20%; float:left; }
 		#stage .block .action { cursor:pointer; font-size:14px; width:100%; height:80px; color:#ccc; border-left:none; border-top:none; border-right:solid 1px #333;border-bottom:solid 1px #333;}
 		#stage .block .clear { display:none; }
@@ -23,9 +23,11 @@
 	#controls { text-align:right; color:#333;}
 		#controls button { cursor:pointer; background:none; border:none; color:#333; font-size:13px; }
 
-		#log { color:#0f0; clear:both; }
-		#chart { margin:10px 0; overflow:hidden;width:100%; }
-		#chart .bar { position:relative;font-size:11px;color:#ccc;float:left;height:60px; border-right:solid 1px #000; overflow:hidden; }
+		#stats { color:#A0A70C; font-size:11px; font-family:verdana,arial,helvetica,sans-serif; }
+		
+		#log { color:#A0A70C; clear:both; }
+		#chart { margin:10px 0; overflow:hidden;width:100%;}
+		#chart .bar { position:relative;font-size:11px;color:#ccc;float:left;height:40px; border-right:solid 1px #000; overflow:hidden; }
 		#chart .bar span { position:absolute; bottom:2px; left:4px; width:500px; }
 		#chart .bar.p1 { background-color:#3366FF; }
 		#chart .bar.p10 { background-color:#5C66F5; }
@@ -38,25 +40,29 @@
 		#stats .column { float:left; width:33%; }
 	</style>
 	<script type="text/javascript" src="./stack.js"></script>
+	<link href='http://fonts.googleapis.com/css?family=Roboto:300,400|Roboto+Condensed:300italic,400' rel='stylesheet' type='text/css'>
 </head>
 <body data-id="12345">
 <div id="controls">
-	<strong>Ticktox</strong> | <button id="editall">Remove Tasks</button>
-	<button id="report">Log Report</button>
+	<strong>Ticktox</strong> | 
 </div>
 <div id="stage" class="user"></div>
 <div id="chart"></div>
 <div id="stats">
 	<div class="column">
-		log
+		<strong>LOG</strong>
 		<div id="log"></div>
 	</div>
 	<div class="column">
-		summary
-		<ul id="summary"></ul>
+		<strong>SUMMARY</strong>
+		<dl id="summary"></dl>
 	</div>
 	<div class="column">
-		dfdfdf
+		<strong>SETTINGS</strong>
+		<dl>
+			<dt><button id="editall">Remove Tasks</button></dt>
+			<dt><button id="report">Refresh Report</button></dt>
+		</dl>
 	</div>
 </div>
 <div id="log"></div>
@@ -75,7 +81,7 @@
 	{{#data}}<div class="bar" data-percent="{{percent}}" style="width:{{percent}}%;background-color:{{barcolor}}"><span>{{task}}</span></div>{{/data}}
 </script>
 <script id="tmpl-summary" type="text/x-jquery-tmpl">
-	{{#data}}<li><span>{{task}}: {{hours}}hrs</span></li>{{/data}}
+	{{#data}}<dt><span>{{task}}: {{hours}}hrs</span></dt>{{/data}}
 </script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script>
@@ -119,6 +125,7 @@ var App = (function($, mz) {
 			db.init(function() {
 				local.renderBlocks(25);
 				bind.init();
+				local.showReport();
 				//local.startTimer(600); // In seconds
 			});
 		},
@@ -182,11 +189,9 @@ var App = (function($, mz) {
 			var taskName = $("#stage .on .action").data("name");
 
 			if (taskName != undefined) {
-				
 				$.post("db.php",{"log":"1","id":vars.id,"entry":{"task":taskName,"state":"off"}},function(response) {
 					local.displayLog(JSON.parse(response));
 				});
-				
 			}
 		},
 
@@ -236,11 +241,11 @@ var App = (function($, mz) {
 				$("#chart .bar").each(function() {
 					var p = $(this).data("percent");
 					var c = "p1";
-					if (p > 10) { c = "p10"; }
-					if (p > 25) { c = "p25"; }
-					if (p > 50) { c = "p50"; }
-					if (p > 75) { c = "p75"; }
-					if (p > 90) { c = "p90"; }
+					if (p > 5) { c = "p10"; }
+					if (p > 10) { c = "p25"; }
+					if (p > 15) { c = "p50"; }
+					if (p > 20) { c = "p75"; }
+					if (p > 25) { c = "p90"; }
 					
 					$(this).addClass(c);
 				});
