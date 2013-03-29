@@ -25,7 +25,7 @@
 
 		#stats { color:#A0A70C; font-size:11px; font-family:verdana,arial,helvetica,sans-serif; }
 		
-		#log { color:#A0A70C; clear:both; }
+		#log { color:#A0A70C; clear:both; height:200px; overflow:hidden; }
 		#chart { margin:10px 0; overflow:hidden;width:100%;}
 		#chart .bar { position:relative;font-size:11px;color:#ccc;float:left;height:40px; border-right:solid 1px #000; overflow:hidden; }
 		#chart .bar span { position:absolute; bottom:2px; left:4px; width:500px; }
@@ -36,16 +36,14 @@
 		#chart .bar.p75 { background-color:#D666D6; }
 		#chart .bar.p90 { background-color:#FF66CC; }
 		
-		#stats { width:100%; overflow:auto; }
+		#stats { width:100%; overflow:auto; padding:0 20px;}
 		#stats .column { float:left; width:33%; }
 	</style>
 	<script type="text/javascript" src="./stack.js"></script>
 	<link href='http://fonts.googleapis.com/css?family=Roboto:300,400|Roboto+Condensed:300italic,400' rel='stylesheet' type='text/css'>
 </head>
 <body data-id="12345">
-<div id="controls">
-	<strong>Ticktox</strong> | 
-</div>
+<div id="controls"></div>
 <div id="stage" class="user"></div>
 <div id="chart"></div>
 <div id="stats">
@@ -62,6 +60,7 @@
 		<dl>
 			<dt><button id="editall">Remove Tasks</button></dt>
 			<dt><button id="report">Refresh Report</button></dt>
+			<dt><button id="reset">Reset</button></dt>
 		</dl>
 	</div>
 </div>
@@ -126,14 +125,14 @@ var App = (function($, mz) {
 				local.renderBlocks(25);
 				bind.init();
 				local.showReport();
-				//local.startTimer(600); // In seconds
+				local.startTimer(600); // In seconds
 			});
 		},
 
 		"renderBlocks":function(limit) {
 			var tmpl = $("#tmpl-block").html();		
 			$.each(db.index, function(k,viewData) {
-				if (viewData.name != "empty") { viewData.defaultClass = "active off"; } else { viewData.defaultClass="empty"; }
+				//if (viewData.name != "empty") { viewData.defaultClass = "active off"; } else { viewData.defaultClass="empty"; }
 
 				var render = Mustache.render(tmpl, viewData);
 
@@ -153,6 +152,7 @@ var App = (function($, mz) {
 			var clicked     = $(el);
 			var clickParent = clicked.parent();
 			var taskName    = clicked.data("name");
+			var blockId     = clicked.data("id");
 
 			if (taskName == "empty") {
 				var taskName = prompt("What should this task be called?");
@@ -166,7 +166,7 @@ var App = (function($, mz) {
 				}
 			} else {
 				if (clickParent.hasClass("on")) {
-					// Turn off clicked task
+					// Turn off clicked task, not turning on another
 					local.logLastTask();
 					clickParent.removeClass("on").addClass("off"); 
 					$("title").html("NOT RUNNING"+title);
@@ -179,7 +179,8 @@ var App = (function($, mz) {
 					clickParent.removeClass("off").addClass("on");
 					local.playAudio();
 					local.stopTimer();
-					local.startTimer();
+					local.startTimer(600); // In seconds
+
 					$("title").html(taskName+vars.title);
 				}
 			}			
@@ -257,15 +258,21 @@ var App = (function($, mz) {
 		},
 
 		"playAudio":function() {
-			//$("audio").attr("src","beep.mp3");
+			$("audio").attr("src","beep.mp3");
 		},
 
 		"startTimer":function(sec) {
-			//local.timer = window.setInterval(local.playAudio,(sec * 1000));
+			local.timer = window.setInterval(local.playAudio,(sec * 1000));
 		},
 
 		"stopTimer":function() {	
-			//window.clearInterval(local.timer);
+			window.clearInterval(local.timer);
+		},
+
+		"resetAll":function() {
+			$.post("db.php",{"reset":vars.id, "id":vars.id},function(response) {
+				window.location = "./app.php";
+			});
 		}
 	}
 	
@@ -277,6 +284,7 @@ var App = (function($, mz) {
 			bind.userActions();
 			bind.adminSwitch();
 			bind.report();
+			bind.reset();
 		},
 	
 		"report":function() {
@@ -290,6 +298,10 @@ var App = (function($, mz) {
 		"adminSwitch":function() {
 
 			$("#editall").on("click",local.adminSwitch);
+		},
+
+		"reset":function() {
+			$("#reset").on("click",local.resetAll);
 		}
 	}
 

@@ -20,6 +20,10 @@
 		$a_report = $App->getReport();
 		echo json_encode($a_report);
 	}
+
+	if (isset($_POST["reset"])) {
+		$App->resetData($_POST["reset"]);
+	}
 	
 /*	
 	if (isset($_POST["log"])) {

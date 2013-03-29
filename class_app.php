@@ -1,4 +1,6 @@
 <?
+	date_default_timezone_set("America/New_York");
+
 	class App {
 		function App($id) {
 			$this->userId    = $id;
@@ -6,13 +8,34 @@
 			$this->indexPath = $this->setIndexFile();
 			$this->logPath   = $this->setLogFile();
 		}
+
+		function resetData($id) {
+			unlink($this->indexPath);
+			unlink($this->logPath);
+		}
 		
 		function setIndexFile() {
-			return($this->dataPath."/".$this->userId.".index");
+			$path = $this->dataPath."/".$this->userId.".index";
+
+			if (!file_exists($path)) {
+				$fr = fopen($path,"w");
+				fwrite($fr, "");
+				fclose($fr);
+			}
+
+			return($path);
 		}
 		
 		function setLogFile() {
-			return($this->dataPath."/".$this->userId.".log");
+			$path = $this->dataPath."/".$this->userId.".log";
+
+			if (!file_exists($path)) {
+				$fr = fopen($path,"w");
+				fwrite($fr, "");
+				fclose($fr);
+			}
+
+			return($path);
 		}
 		
 		
@@ -22,7 +45,8 @@
 				for ($i=1; $i <= 25; $i++) {
 					$a_index[] = array(
 						"id"   => $i,
-						"name" => "empty"
+						"name" => "empty",
+						"defaultClass" => "empty"
 					);
 					
 					$s_index = serialize($a_index);
@@ -34,6 +58,26 @@
 			} else {
 				$a_index = unserialize(file_get_contents($this->indexPath));
 			}
+
+			$a_log       = $this->getLog();
+			$a_lastEntry = array_pop($a_log);
+
+			if (is_array($a_index)) {
+				foreach ($a_index as $k => $a_block) {
+				
+					if ($a_lastEntry["state"] == "on" and $a_block["name"] == $a_lastEntry["task"]) {
+						$a_index[$k]["defaultClass"] = "active on";
+					} else {
+						if ($a_block["name"] != "empty") {
+							$a_index[$k]["defaultClass"] = "active off";
+						} else {
+							$a_index[$k]["defaultClass"] = "empty";
+						}
+					}
+				}
+			}
+			
+
 			
 			return($a_index);
 		}
